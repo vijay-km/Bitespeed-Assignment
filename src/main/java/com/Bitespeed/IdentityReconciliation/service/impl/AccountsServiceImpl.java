@@ -41,26 +41,27 @@ public class AccountsServiceImpl implements IAccountsService {
         contactsByEmail.sort(precedenceComparator);
         contactsByPhone.sort(precedenceComparator);
 
-        Set<String> emailSet = new HashSet<>();
-        contactsByEmail.forEach(contact -> emailSet.add(contact.getEmail()));
-        contactsByPhone.forEach(contact -> emailSet.add(contact.getEmail()));
-        Set<String> phoneSet = new HashSet<>();
-        contactsByEmail.forEach(contact -> phoneSet.add(contact.getPhoneNumber()));
-        contactsByPhone.forEach(contact -> phoneSet.add(contact.getPhoneNumber()));
-
-        // Convert sets to lists for response
-        List<String> allEmails = new ArrayList<>(emailSet);
-        List<String> allPhoneNumbers = new ArrayList<>(phoneSet);
-
         Contact primaryContact = null;
         if (!contactsByPhone.isEmpty()) {
-            primaryContact = linkContacts(contactsByPhone.get(0), contactDto.getEmail(), contactDto, true);
+            primaryContact = linkContacts(contactsByPhone.get(0), contactDto.getEmail(), contactDto, false);
         } else if (!contactsByEmail.isEmpty()) {
             primaryContact = linkContacts(contactsByEmail.get(0), contactDto.getMobileNumber(),contactDto, false);
         } else {
             primaryContact = createNewContact(contactDto.getEmail(), contactDto.getMobileNumber());
         }
+        contactsByEmail = contactRepository.findByEmail(contactDto.getEmail());
+        contactsByPhone = contactRepository.findByPhoneNumber(contactDto.getMobileNumber());
 
+        Set<String> emailSet1 = new HashSet<>();
+        contactsByEmail.forEach(contact -> emailSet1.add(contact.getEmail()));
+        contactsByPhone.forEach(contact -> emailSet1.add(contact.getEmail()));
+
+        Set<String> phoneSet1 = new HashSet<>();
+        contactsByEmail.forEach(contact -> phoneSet1.add(contact.getPhoneNumber()));
+        contactsByPhone.forEach(contact -> phoneSet1.add(contact.getPhoneNumber()));
+
+        List<String> allEmails = new ArrayList<>(emailSet1);
+        List<String> allPhoneNumbers = new ArrayList<>(phoneSet1);
         if (!allEmails.contains(primaryContact.getEmail())) {
             allEmails.add(primaryContact.getEmail());
         }
@@ -68,11 +69,12 @@ public class AccountsServiceImpl implements IAccountsService {
         if (!allPhoneNumbers.contains(primaryContact.getPhoneNumber())) {
             allPhoneNumbers.add(primaryContact.getPhoneNumber());
         }
+        Set<Long> secondaryIdsSet = new HashSet<>();
+        contactsByEmail.forEach(contact -> secondaryIdsSet.add(contact.getLinkedId()));
+        contactsByPhone.forEach(contact -> secondaryIdsSet.add(contact.getLinkedId()));
 
-        List<Long> secondaryContactIds = contactRepository.findByLinkedId(primaryContact.getId())
-                .stream()
-                .map(Contact::getId)
-                .collect(Collectors.toList());
+
+        List<Long> secondaryContactIds = new ArrayList<>(secondaryIdsSet);
 
         return new ContactResponseDto(
                 primaryContact.getId(),
