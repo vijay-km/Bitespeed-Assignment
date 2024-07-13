@@ -40,12 +40,18 @@ public class AccountsServiceImpl implements IAccountsService {
         };
         contactsByEmail.sort(precedenceComparator);
         contactsByPhone.sort(precedenceComparator);
+        boolean isBothPrimary = false;
+        if(!contactsByEmail.isEmpty() && !contactsByPhone.isEmpty()){
+            if(contactsByEmail.getFirst().getLinkPrecedence() == LinkPrecedence.PRIMARY && contactsByPhone.getFirst().getLinkPrecedence() == LinkPrecedence.PRIMARY) {
+                isBothPrimary = true;
+            }
+        }
 
         Contact primaryContact = null;
         if (!contactsByPhone.isEmpty()) {
-            primaryContact = linkContacts(contactsByPhone.get(0), contactDto.getEmail(), contactDto, false);
+            primaryContact = linkContacts(contactsByPhone.get(0), contactDto, isBothPrimary);
         } else if (!contactsByEmail.isEmpty()) {
-            primaryContact = linkContacts(contactsByEmail.get(0), contactDto.getMobileNumber(),contactDto, false);
+            primaryContact = linkContacts(contactsByEmail.get(0), contactDto, isBothPrimary);
         } else {
             primaryContact = createNewContact(contactDto.getEmail(), contactDto.getMobileNumber());
         }
@@ -53,25 +59,51 @@ public class AccountsServiceImpl implements IAccountsService {
         contactsByPhone = contactRepository.findByPhoneNumber(contactDto.getMobileNumber());
 
         Set<String> emailSet1 = new HashSet<>();
-        contactsByEmail.forEach(contact -> emailSet1.add(contact.getEmail()));
-        contactsByPhone.forEach(contact -> emailSet1.add(contact.getEmail()));
+        contactsByEmail.forEach(contact -> {
+            if (contact.getEmail() != null && !contact.getEmail().isEmpty()) {
+                emailSet1.add(contact.getEmail());
+            }
+        });
+        contactsByPhone.forEach(contact -> {
+            if (contact.getEmail() != null && !contact.getEmail().isEmpty()) {
+                emailSet1.add(contact.getEmail());
+            }
+        });
 
         Set<String> phoneSet1 = new HashSet<>();
-        contactsByEmail.forEach(contact -> phoneSet1.add(contact.getPhoneNumber()));
-        contactsByPhone.forEach(contact -> phoneSet1.add(contact.getPhoneNumber()));
+        contactsByEmail.forEach(contact -> {
+            if (contact.getPhoneNumber() != null && !contact.getPhoneNumber().isEmpty()) {
+                phoneSet1.add(contact.getPhoneNumber());
+            }
+        });
+        contactsByPhone.forEach(contact -> {
+            if (contact.getPhoneNumber() != null && !contact.getPhoneNumber().isEmpty()) {
+                phoneSet1.add(contact.getPhoneNumber());
+            }
+        });
 
         List<String> allEmails = new ArrayList<>(emailSet1);
         List<String> allPhoneNumbers = new ArrayList<>(phoneSet1);
-        if (!allEmails.contains(primaryContact.getEmail())) {
+
+        if (primaryContact.getEmail() != null && !primaryContact.getEmail().isEmpty() && !allEmails.contains(primaryContact.getEmail())) {
             allEmails.add(primaryContact.getEmail());
         }
 
-        if (!allPhoneNumbers.contains(primaryContact.getPhoneNumber())) {
+        if (primaryContact.getPhoneNumber() != null && !primaryContact.getPhoneNumber().isEmpty() && !allPhoneNumbers.contains(primaryContact.getPhoneNumber())) {
             allPhoneNumbers.add(primaryContact.getPhoneNumber());
         }
+
         Set<Long> secondaryIdsSet = new HashSet<>();
-        contactsByEmail.forEach(contact -> secondaryIdsSet.add(contact.getLinkedId()));
-        contactsByPhone.forEach(contact -> secondaryIdsSet.add(contact.getLinkedId()));
+        contactsByEmail.forEach(contact -> {
+            if (contact.getLinkedId() != null) {
+                secondaryIdsSet.add(contact.getLinkedId());
+            }
+        });
+        contactsByPhone.forEach(contact -> {
+            if (contact.getLinkedId() != null) {
+                secondaryIdsSet.add(contact.getLinkedId());
+            }
+        });
 
 
         List<Long> secondaryContactIds = new ArrayList<>(secondaryIdsSet);
@@ -84,8 +116,9 @@ public class AccountsServiceImpl implements IAccountsService {
         );
     }
 
-    private Contact linkContacts(Contact primaryContact, String newContactInfo, ContactDto contactDto, boolean viaPhoneNumber) {
+    private Contact linkContacts(Contact primaryContact, ContactDto contactDto, boolean viaPhoneNumber) {
         Contact newContact = new Contact();
+        String newContactInfo = contactDto.getMobileNumber()!= null && !contactDto.getMobileNumber().isEmpty() ? contactDto.getMobileNumber() : contactDto.getEmail();
         if (newContactInfo.contains("@")) {
             newContact.setEmail(newContactInfo);
             newContact.setPhoneNumber(contactDto.getMobileNumber());
