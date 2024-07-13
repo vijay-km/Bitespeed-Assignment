@@ -1,14 +1,8 @@
 package com.Bitespeed.IdentityReconciliation.service;
 
-import com.Bitespeed.IdentityReconciliation.dto.CustomerDto;
+import com.Bitespeed.IdentityReconciliation.dto.ContactDto;
+import com.Bitespeed.IdentityReconciliation.dto.ContactResponseDto;
 
 public interface IAccountsService {
-
-    public void CreateAccount(CustomerDto customerDto);
-
-    public CustomerDto fetchCustomer(String mobileNumber);
-
-    public boolean updateCustomer(CustomerDto customerDto);
-
-    public  boolean deleteAccount(CustomerDto customerDto);
+    public ContactResponseDto AddUserAccount(ContactDto contactDto);
 }

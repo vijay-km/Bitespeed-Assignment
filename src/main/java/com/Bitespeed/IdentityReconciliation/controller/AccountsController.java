@@ -1,8 +1,8 @@
 package com.Bitespeed.IdentityReconciliation.controller;
 
 import com.Bitespeed.IdentityReconciliation.constants.AccountsConstants;
-import com.Bitespeed.IdentityReconciliation.dto.ErrorResponseDto;
-import com.Bitespeed.IdentityReconciliation.dto.ResponseDto;
+import com.Bitespeed.IdentityReconciliation.dto.*;
+import com.Bitespeed.IdentityReconciliation.entity.Contact;
 import com.Bitespeed.IdentityReconciliation.service.IAccountsService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Content;
@@ -18,7 +18,6 @@ import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
-import com.Bitespeed.IdentityReconciliation.dto.CustomerDto;
 
 @Tag(
         name = "CRUD REST APIs for Accounts in EazyBank",
@@ -33,8 +32,8 @@ public class AccountsController {
     private IAccountsService iAccountsService;
 
     @Operation(
-            summary = "Create Account REST API",
-            description = "REST API to create new Customer &  Account inside EazyBank"
+            summary = "Create Contact REST API",
+            description = "REST API to create and Update Coontact at BiteSpeed"
     )
     @ApiResponses({
             @ApiResponse(
@@ -50,47 +49,13 @@ public class AccountsController {
             )
     }
     )
-    @PostMapping("/create")
-    public ResponseEntity<ResponseDto> createAccount(@Valid @RequestBody CustomerDto customerDto){
-        iAccountsService.CreateAccount(customerDto);
+    @PostMapping("/identify")
+    public ResponseEntity<ContactResponseDto> AddCreateContact(@Valid @RequestBody ContactDto contactDto){
 
-        return ResponseEntity
-                .status(HttpStatus.CREATED)
-                .body(new ResponseDto(AccountsConstants.STATUS_201, AccountsConstants.MESSAGE_201));
-    }
+        ContactResponseDto contactResponseDto =  iAccountsService.AddUserAccount(contactDto);
 
-    @GetMapping("/fetch")
-    public ResponseEntity<CustomerDto> fetchCustomer(@RequestParam
-                                                     @Pattern(regexp = "(^$|[0-9]{10})", message = "Mobile Number should have 10 digits")
-                                                     String mobileNumber){
-        CustomerDto customerDto = iAccountsService.fetchCustomer(mobileNumber);
+        return new ResponseEntity<>(contactResponseDto,HttpStatus.OK);
 
-        return new ResponseEntity<>(customerDto, HttpStatus.OK);
-    }
-
-    @PutMapping("/update")
-    public  ResponseEntity<ResponseDto> updateAccount(@Valid @RequestBody CustomerDto customerDto){
-        boolean isupdated = iAccountsService.updateCustomer(customerDto);
-
-        if(isupdated){
-            return new ResponseEntity<>(new ResponseDto(AccountsConstants.STATUS_200,AccountsConstants.MESSAGE_200),HttpStatus.OK);
-        }
-        else {
-            return  new ResponseEntity<>(new ResponseDto(AccountsConstants.MESSAGE_500, AccountsConstants.STATUS_500), HttpStatus.INTERNAL_SERVER_ERROR);
-        }
-
-    }
-
-    @DeleteMapping("/delete")
-    public ResponseEntity<ResponseDto> deleteCustomer(@Valid @RequestBody CustomerDto customerDto){
-        boolean isDeleted = iAccountsService.deleteAccount(customerDto);
-
-        if(isDeleted){
-            return new ResponseEntity<>(new ResponseDto(AccountsConstants.STATUS_200, AccountsConstants.MESSAGE_200), HttpStatus.OK);
-        }
-        else {
-            return new ResponseEntity<>(new ResponseDto(AccountsConstants.STATUS_500, AccountsConstants.MESSAGE_500),HttpStatus.INTERNAL_SERVER_ERROR);
-        }
     }
 
 }
